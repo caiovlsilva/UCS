@@ -39,18 +39,14 @@ for img in imgs:
             encoding="utf-8"
         )
         print(f"[OCR]   -> {len(tokens)} token(s)")
-        img.unlink()
+        img.unlink()  # ← só deleta o PNG, meta fica para o GAS consumir
 
     except Exception as e:
         print(f"[OCR] ERRO em {img.name}: {e}")
         (RESULTS / f"{img.stem}.json").write_text(
-            json.dumps({"file": img.name, "error": str(e)}),
+            json.dumps({"file": img.name, "error": str(e)}, ensure_ascii=False),
             encoding="utf-8"
         )
 
-# ★ NOVO: limpar todos os metas (mesmo de imagens com erro)
-for meta in QUEUE.glob("*.meta.json"):
-    meta.unlink()
-    print(f"[OCR] meta removido: {meta.name}")
-
+# ★ NÃO deletar metas! O GAS precisa deles para consumir os results
 print("[OCR] Fim")
