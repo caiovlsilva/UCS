@@ -3,7 +3,7 @@ name: OCR Queue
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'   # fallback: a cada 15 min
+    - cron: '*/15 * * * *'
 
 permissions:
   contents: write
