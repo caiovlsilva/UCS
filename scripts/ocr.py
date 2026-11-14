@@ -10,8 +10,19 @@ QUEUE.mkdir(exist_ok=True)
 RESULTS.mkdir(exist_ok=True)
 
 print("[OCR] Carregando modelo PaddleOCR...")
-# ★ use_angle_cls=False: não baixa o modelo de classificação (economiza tempo)
-ocr = PaddleOCR(use_angle_cls=False, lang='en', show_log=False)
+# ★ Ajustes para detectar texto pequeno (attrs SPD/STR/POW/SKL/RES):
+#    - det_limit_side_len=1600 → não reduz tanto a resolução
+#    - det_db_thresh=0.2       → threshold mais baixo para considerar pixel como texto
+#    - det_db_box_thresh=0.3   → aceita box de texto com menor confiança
+ocr = PaddleOCR(
+    use_angle_cls=False,
+    lang='en',
+    show_log=False,
+    det_limit_side_len=1600,
+    det_db_thresh=0.2,
+    det_db_box_thresh=0.3,
+    det_db_unclip_ratio=1.8,
+)
 
 imgs = sorted(list(QUEUE.glob("*.png")) + list(QUEUE.glob("*.jpg")))
 print(f"[OCR] {len(imgs)} imagem(ns) na fila")
@@ -19,7 +30,7 @@ print(f"[OCR] {len(imgs)} imagem(ns) na fila")
 for img in imgs:
     try:
         print(f"[OCR] {img.name}")
-        res = ocr.ocr(str(img), cls=False)  # ★ cls=False
+        res = ocr.ocr(str(img), cls=False)
 
         tokens = []
         if res and res[0]:
@@ -49,5 +60,4 @@ for img in imgs:
             encoding="utf-8"
         )
 
-# NÃO deletar metas! O GAS precisa deles para consumir os results
 print("[OCR] Fim")
