@@ -39,17 +39,15 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ★ NOVO: cache estável dos modelos PaddleOCR (key fixa)
       - name: Cache modelos PaddleOCR
         if: steps.check.outputs.count != '0'
         uses: actions/cache@v4
         with:
           path: ~/.paddleocr
-          key: paddleocr-v3-models
+          key: paddleocr-v4-models
           restore-keys: |
-            paddleocr-v3-models
+            paddleocr-v4-models
 
-      # ★ NOVO: pré-baixar modelos ANTES do OCR (garante que o cache é salvo mesmo se OCR falhar)
       - name: Pré-baixar modelos PaddleOCR
         if: steps.check.outputs.count != '0'
         run: |
