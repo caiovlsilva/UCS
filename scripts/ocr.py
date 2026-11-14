@@ -48,4 +48,9 @@ for img in imgs:
             encoding="utf-8"
         )
 
+# ★ NOVO: limpar todos os metas (mesmo de imagens com erro)
+for meta in QUEUE.glob("*.meta.json"):
+    meta.unlink()
+    print(f"[OCR] meta removido: {meta.name}")
+
 print("[OCR] Fim")
