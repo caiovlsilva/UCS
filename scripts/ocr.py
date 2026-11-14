@@ -10,7 +10,8 @@ QUEUE.mkdir(exist_ok=True)
 RESULTS.mkdir(exist_ok=True)
 
 print("[OCR] Carregando modelo PaddleOCR...")
-ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+# ★ use_angle_cls=False: não baixa o modelo de classificação (economiza tempo)
+ocr = PaddleOCR(use_angle_cls=False, lang='en', show_log=False)
 
 imgs = sorted(list(QUEUE.glob("*.png")) + list(QUEUE.glob("*.jpg")))
 print(f"[OCR] {len(imgs)} imagem(ns) na fila")
@@ -18,7 +19,7 @@ print(f"[OCR] {len(imgs)} imagem(ns) na fila")
 for img in imgs:
     try:
         print(f"[OCR] {img.name}")
-        res = ocr.ocr(str(img), cls=True)
+        res = ocr.ocr(str(img), cls=False)  # ★ cls=False
 
         tokens = []
         if res and res[0]:
@@ -39,7 +40,7 @@ for img in imgs:
             encoding="utf-8"
         )
         print(f"[OCR]   -> {len(tokens)} token(s)")
-        img.unlink()  # ← só deleta o PNG, meta fica para o GAS consumir
+        img.unlink()
 
     except Exception as e:
         print(f"[OCR] ERRO em {img.name}: {e}")
@@ -48,5 +49,5 @@ for img in imgs:
             encoding="utf-8"
         )
 
-# ★ NÃO deletar metas! O GAS precisa deles para consumir os results
+# NÃO deletar metas! O GAS precisa deles para consumir os results
 print("[OCR] Fim")
