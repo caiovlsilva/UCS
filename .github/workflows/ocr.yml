@@ -1,0 +1,48 @@
+name: OCR Queue
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'   # fallback: a cada 15 min
+
+permissions:
+  contents: write
+
+jobs:
+  ocr:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Contar imagens na fila
+        id: check
+        run: |
+          N=$(find queue -maxdepth 1 \( -name '*.png' -o -name '*.jpg' \) 2>/dev/null | wc -l)
+          echo "count=$N" >> $GITHUB_OUTPUT
+          echo "Fila: $N imagem(ns)"
+
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.count != '0'
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar PaddleOCR
+        if: steps.check.outputs.count != '0'
+        run: |
+          pip install --upgrade pip
+          pip install paddlepaddle paddleocr opencv-python-headless pillow
+
+      - name: Rodar OCR
+        if: steps.check.outputs.count != '0'
+        run: python scripts/ocr.py
+
+      - name: Commit resultados
+        if: steps.check.outputs.count != '0'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add queue/ results/
+          git diff --staged --quiet || git commit -m "OCR $(date -u +%Y%m%d-%H%M%S)"
+          git push
