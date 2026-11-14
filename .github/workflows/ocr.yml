@@ -39,15 +39,26 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      # ★ Cache dos modelos PaddleOCR (~17 MB, economiza ~100s por execução)
+      # ★ NOVO: cache estável dos modelos PaddleOCR (key fixa)
       - name: Cache modelos PaddleOCR
         if: steps.check.outputs.count != '0'
         uses: actions/cache@v4
         with:
           path: ~/.paddleocr
-          key: paddleocr-models-v2-${{ hashFiles('requirements.txt') }}
+          key: paddleocr-v3-models
           restore-keys: |
-            paddleocr-models-v2-
+            paddleocr-v3-models
+
+      # ★ NOVO: pré-baixar modelos ANTES do OCR (garante que o cache é salvo mesmo se OCR falhar)
+      - name: Pré-baixar modelos PaddleOCR
+        if: steps.check.outputs.count != '0'
+        run: |
+          python -c "
+          from paddleocr import PaddleOCR
+          print('[CACHE] Baixando modelos...')
+          PaddleOCR(use_angle_cls=False, lang='en', show_log=False)
+          print('[CACHE] Modelos prontos')
+          "
 
       - name: Rodar OCR
         if: steps.check.outputs.count != '0'
