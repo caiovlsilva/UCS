@@ -44,9 +44,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.paddleocr
-          key: paddleocr-v4-models
+          key: paddleocr-v5-models
           restore-keys: |
-            paddleocr-v4-models
+            paddleocr-v5-models
 
       - name: Pré-baixar modelos PaddleOCR
         if: steps.check.outputs.count != '0'
@@ -62,7 +62,7 @@ jobs:
         if: steps.check.outputs.count != '0'
         run: python scripts/ocr.py
 
-      - name: Commit e push (com retry robusto)
+      - name: Commit e push
         if: steps.check.outputs.count != '0'
         run: |
           git config user.name  "github-actions[bot]"
@@ -73,17 +73,13 @@ jobs:
           for i in 1 2 3 4 5; do
             echo "=== Tentativa $i de 5 ==="
             git pull --rebase origin main || {
-              echo "Rebase falhou, tentando merge"
               git rebase --abort || true
               git pull --no-rebase --no-edit origin main || true
             }
             if git push origin main; then
-              echo "✅ Push OK na tentativa $i"
+              echo "✅ Push OK"
               exit 0
             fi
-            echo "❌ Push falhou na tentativa $i, aguardando $((i * 5))s..."
             sleep $((i * 5))
           done
-          
-          echo "❌ Push falhou após 5 tentativas"
           exit 1
