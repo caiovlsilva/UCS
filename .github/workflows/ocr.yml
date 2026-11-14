@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ocr-queue
+  cancel-in-progress: false
+
 jobs:
   ocr:
     runs-on: ubuntu-latest
