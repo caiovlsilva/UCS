@@ -39,6 +39,16 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      # ★ Cache dos modelos PaddleOCR (~17 MB, economiza ~100s por execução)
+      - name: Cache modelos PaddleOCR
+        if: steps.check.outputs.count != '0'
+        uses: actions/cache@v4
+        with:
+          path: ~/.paddleocr
+          key: paddleocr-models-v2-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            paddleocr-models-v2-
+
       - name: Rodar OCR
         if: steps.check.outputs.count != '0'
         run: python scripts/ocr.py
