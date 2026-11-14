@@ -43,11 +43,17 @@ jobs:
         if: steps.check.outputs.count != '0'
         run: python scripts/ocr.py
 
-      - name: Commit resultados
+      - name: Commit e push (com rebase)
         if: steps.check.outputs.count != '0'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add queue/ results/
           git diff --staged --quiet || git commit -m "OCR $(date -u +%Y%m%d-%H%M%S)"
-          git push
+          # ★ NOVO: rebase antes do push para resolver concorrência
+          git pull --rebase origin main || {
+            echo "=== REBASE FALHOU — tentando rebase com estratégia de merge ==="
+            git rebase --abort || true
+            git pull --no-rebase --no-edit origin main
+          }
+          git push origin main
