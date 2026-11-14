@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: ocr-queue
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   ocr:
@@ -43,17 +43,28 @@ jobs:
         if: steps.check.outputs.count != '0'
         run: python scripts/ocr.py
 
-      - name: Commit e push (com rebase)
+      - name: Commit e push (com retry robusto)
         if: steps.check.outputs.count != '0'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add queue/ results/
           git diff --staged --quiet || git commit -m "OCR $(date -u +%Y%m%d-%H%M%S)"
-          # ★ NOVO: rebase antes do push para resolver concorrência
-          git pull --rebase origin main || {
-            echo "=== REBASE FALHOU — tentando rebase com estratégia de merge ==="
-            git rebase --abort || true
-            git pull --no-rebase --no-edit origin main
-          }
-          git push origin main
+          
+          for i in 1 2 3 4 5; do
+            echo "=== Tentativa $i de 5 ==="
+            git pull --rebase origin main || {
+              echo "Rebase falhou, tentando merge"
+              git rebase --abort || true
+              git pull --no-rebase --no-edit origin main || true
+            }
+            if git push origin main; then
+              echo "✅ Push OK na tentativa $i"
+              exit 0
+            fi
+            echo "❌ Push falhou na tentativa $i, aguardando $((i * 5))s..."
+            sleep $((i * 5))
+          done
+          
+          echo "❌ Push falhou após 5 tentativas"
+          exit 1
