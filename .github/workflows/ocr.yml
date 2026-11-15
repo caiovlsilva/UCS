@@ -51,12 +51,17 @@ jobs:
       - name: Pré-baixar modelos PaddleOCR
         if: steps.check.outputs.count != '0'
         run: |
-          python -c "
+          python - <<'EOF'
           from paddleocr import PaddleOCR
-          print('[CACHE] Baixando modelos...')
-          PaddleOCR(use_angle_cls=False, lang='en', show_log=False)
-          print('[CACHE] Modelos prontos')
-          "
+          print("[CACHE] Baixando modelos...")
+          for kw in ({"lang": "en", "use_angle_cls": False, "show_log": False}, {"lang": "en"}):
+              try:
+                  PaddleOCR(**kw)
+                  break
+              except (TypeError, ValueError) as e:
+                  print(f"[CACHE] kwargs rejeitados: {e}")
+          print("[CACHE] Modelos prontos")
+          EOF
 
       - name: Rodar OCR
         if: steps.check.outputs.count != '0'
@@ -67,12 +72,12 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add queue/ results/
+          git add -A queue/ results/
           git diff --staged --quiet || git commit -m "OCR $(date -u +%Y%m%d-%H%M%S)"
-          
+
           for i in 1 2 3 4 5; do
             echo "=== Tentativa $i de 5 ==="
-            git pull --rebase origin main || {
+            git pull --rebase --autostash origin main || {
               git rebase --abort || true
               git pull --no-rebase --no-edit origin main || true
             }
